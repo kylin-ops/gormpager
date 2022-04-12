@@ -163,8 +163,6 @@ func (o *filter)QueryResult(db *gorm.DB,filters FilterArgs, results interface{},
 	return nil, err
 }
 
-
-
 func NewFilter(options *Options)*filter{
 	if options.MaxPageSize == 0 {
 		options.MaxPageSize = 50
