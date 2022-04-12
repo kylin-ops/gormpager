@@ -11,7 +11,6 @@ import (
 // 过滤参数
 type FilterArgs map[string]string
 
-
 // 过滤器
 type Options struct {
 	MaxPageSize        int
@@ -22,12 +21,17 @@ type Options struct {
 	NoPageArgName      string
 }
 
-type filter struct {
-	Options
+type Pager struct {
+	maxPageSize        int
+	defaultPageSize    int
+	pageSizeArgName    string
+	currentPageArgName string
+	orderArgName       string
+	noPageArgName      string
 }
 
 // 根据filter生成对于的查询参数
-func (o *filter)MakeNoPageQuery(filters FilterArgs) *query.Query {
+func (o *Pager) MakeNoPageQuery(filters FilterArgs) *query.Query {
 	var _querys []string
 	var _agrs []interface{}
 	var _order []query.OrderBy
@@ -61,37 +65,37 @@ func (o *filter)MakeNoPageQuery(filters FilterArgs) *query.Query {
 }
 
 // 根据filter生成对于的查询参数
-func (o *filter)MakePageQuery(filters FilterArgs) *query.Query {
+func (o *Pager) MakePageQuery(filters FilterArgs) *query.Query {
 	currentPage := 1
-	pageSize := o.DefaultPageSize
+	pageSize := o.defaultPageSize
 	var _querys []string
 	var _agrs []interface{}
 	var _order []query.OrderBy
 	var _noPage bool
 
 	for k, v := range filters {
-		if k == o.CurrentPageArgName {
+		if k == o.currentPageArgName {
 			if _page, err := strconv.Atoi(v); err == nil {
 				currentPage = _page
 			}
 			continue
 		}
-		if k == o.PageSizeArgName {
+		if k == o.pageSizeArgName {
 			if _size, err := strconv.Atoi(v); err == nil {
 				pageSize = _size
-				if pageSize > o.MaxPageSize {
-					pageSize = o.MaxPageSize
+				if pageSize > o.maxPageSize {
+					pageSize = o.maxPageSize
 				}
 			}
 			continue
 		}
 
-		if k == o.NoPageArgName {
+		if k == o.noPageArgName {
 			_noPage = true
 			continue
 		}
 
-		if k == o.OrderArgName {
+		if k == o.orderArgName {
 			_orders := strings.Split(v, ",")
 			for _, field := range _orders {
 				if field == "" {
@@ -124,7 +128,7 @@ func (o *filter)MakePageQuery(filters FilterArgs) *query.Query {
 }
 
 // 分页列表查询器
-func (o *filter)PageQueryResult(db *gorm.DB, filters FilterArgs, results interface{}, preload ...string) (*query.Page, error) {
+func (o *Pager) PageQueryResult(db *gorm.DB, filters FilterArgs, results interface{}, preload ...string) (*query.Page, error) {
 	query := o.MakePageQuery(filters)
 	page, err := query.PageQuery(db)
 	if err != nil {
@@ -141,7 +145,7 @@ func (o *filter)PageQueryResult(db *gorm.DB, filters FilterArgs, results interfa
 }
 
 // 不分页列表查询器
-func (o *filter)NoPageQueryResult(db *gorm.DB, filters FilterArgs, results interface{}, preload ...string) error {
+func (o *Pager) NoPageQueryResult(db *gorm.DB, filters FilterArgs, results interface{}, preload ...string) error {
 	query := o.MakePageQuery(filters)
 	db = query.Query(db)
 
@@ -155,15 +159,15 @@ func (o *filter)NoPageQueryResult(db *gorm.DB, filters FilterArgs, results inter
 }
 
 // 自动选择器，通过判断filterArgs里是否有no_page的参数
-func (o *filter)QueryResult(db *gorm.DB,filters FilterArgs, results interface{}, preload ...string)(*query.Page, error) {
-	if _, ok := filters[o.NoPageArgName]; ok {
+func (o *Pager) QueryResult(db *gorm.DB, filters FilterArgs, results interface{}, preload ...string) (*query.Page, error) {
+	if _, ok := filters[o.noPageArgName]; ok {
 		return o.PageQueryResult(db, filters, results, preload...)
 	}
 	err := o.NoPageQueryResult(db, filters, results, preload...)
 	return nil, err
 }
 
-func NewFilter(options *Options)*filter{
+func NewFilter(options *Options) *Pager {
 	if options.MaxPageSize == 0 {
 		options.MaxPageSize = 50
 	}
@@ -186,7 +190,12 @@ func NewFilter(options *Options)*filter{
 		options.NoPageArgName = "no_page"
 	}
 
-	return &filter{
-		Options: *options,
+	return &Pager{
+		maxPageSize:        options.MaxPageSize,
+		defaultPageSize:    options.DefaultPageSize,
+		pageSizeArgName:    options.PageSizeArgName,
+		currentPageArgName: options.CurrentPageArgName,
+		orderArgName:       options.OrderArgName,
+		noPageArgName:      options.NoPageArgName,
 	}
 }
