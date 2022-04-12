@@ -13,12 +13,12 @@ type FilterArgs map[string]string
 
 // 过滤器
 type Options struct {
-	MaxPageSize        int
-	DefaultPageSize    int
-	PageSizeArgName    string
-	CurrentPageArgName string
-	OrderArgName       string
-	NoPageArgName      string
+	MaxPageSize        int    `json:"max_page_size" yaml:"max_page_size"`
+	DefaultPageSize    int    `json:"default_page_size" yaml:"default_page_size"`
+	PageSizeArgName    string `json:"page_size_arg_name" yaml:"page_size_arg_name"`
+	CurrentPageArgName string `json:"current_page_arg_name" yaml:"current_page_arg_name"`
+	OrderArgName       string `json:"order_arg_name" yaml:"order_arg_name"`
+	NoPageArgName      string `json:"no_page_arg_name" yaml:"no_page_arg_name"`
 }
 
 type Pager struct {
