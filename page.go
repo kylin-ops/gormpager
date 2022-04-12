@@ -31,7 +31,7 @@ type Pager struct {
 }
 
 // 根据filter生成对于的查询参数
-func (o *Pager) MakeNoPageQuery(filters FilterArgs) *query.Query {
+func (o *Pager) MakeNoPageFilter(filters FilterArgs) *query.Query {
 	var _querys []string
 	var _agrs []interface{}
 	var _order []query.OrderBy
@@ -65,7 +65,7 @@ func (o *Pager) MakeNoPageQuery(filters FilterArgs) *query.Query {
 }
 
 // 根据filter生成对于的查询参数
-func (o *Pager) MakePageQuery(filters FilterArgs) *query.Query {
+func (o *Pager) MakePageFilter(filters FilterArgs) *query.Query {
 	currentPage := 1
 	pageSize := o.defaultPageSize
 	var _querys []string
@@ -127,9 +127,17 @@ func (o *Pager) MakePageQuery(filters FilterArgs) *query.Query {
 	}
 }
 
+// 自动选择是否分页
+func (o *Pager) MakeFilter(filters FilterArgs) *query.Query {
+	if _, ok := filters[o.noPageArgName]; ok {
+		return o.MakeNoPageFilter(filters)
+	}
+	return o.MakePageFilter(filters)
+}
+
 // 分页列表查询器
 func (o *Pager) PageQueryResult(db *gorm.DB, filters FilterArgs, results interface{}, preload ...string) (*query.Page, error) {
-	query := o.MakePageQuery(filters)
+	query := o.MakePageFilter(filters)
 	page, err := query.PageQuery(db)
 	if err != nil {
 		return nil, err
@@ -146,7 +154,7 @@ func (o *Pager) PageQueryResult(db *gorm.DB, filters FilterArgs, results interfa
 
 // 不分页列表查询器
 func (o *Pager) NoPageQueryResult(db *gorm.DB, filters FilterArgs, results interface{}, preload ...string) error {
-	query := o.MakePageQuery(filters)
+	query := o.MakeNoPageFilter(filters)
 	db = query.Query(db)
 
 	for _, p := range preload {
