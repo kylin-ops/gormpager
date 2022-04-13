@@ -81,7 +81,6 @@ func (q *Query) PageQuery(db *gorm.DB) (*Page, error) {
 	if q.Page < 1 {
 		q.Page = 1
 	}
-	db = q.Query(db)
 	row, err := totalRow(db)
 	if err != nil {
 		return nil, err
