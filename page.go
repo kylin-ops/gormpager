@@ -168,11 +168,19 @@ func (o *Pager) NoPageQueryResult(db *gorm.DB, filters FilterArgs, results inter
 
 // 自动选择器，通过判断filterArgs里是否有no_page的参数
 func (o *Pager) QueryResult(db *gorm.DB, filters FilterArgs, results interface{}, preload ...string) (*query.Page, error) {
-	if _, ok := filters[o.noPageArgName]; ok {
+	if _, ok := filters[o.noPageArgName]; !ok {
 		return o.PageQueryResult(db, filters, results, preload...)
 	}
 	err := o.NoPageQueryResult(db, filters, results, preload...)
 	return nil, err
+}
+
+func (o *Pager) QueryResultByCommon(db *gorm.DB, filters FilterArgs, results interface{}, preload ...string) (interface{}, error) {
+	if _, ok := filters[o.noPageArgName]; !ok {
+		return o.PageQueryResult(db, filters, results, preload...)
+	}
+	err := o.NoPageQueryResult(db, filters, results, preload...)
+	return &results, err
 }
 
 func NewFilter(options *Options) *Pager {
