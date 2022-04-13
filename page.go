@@ -51,6 +51,10 @@ func (o *Pager) MakeNoPageFilter(filters FilterArgs) *query.Query {
 			}
 			continue
 		}
+		
+		if k == o.noPageArgName {
+			continue
+		}
 
 		if k != "" {
 			_querys = append(_querys, k+" = ?")
