@@ -69,9 +69,6 @@ func (q *Query) Query(d *gorm.DB) *gorm.DB {
 	if q.Offset != 0 {
 		d = d.Offset(q.Offset)
 	}
-	if q.Limit == 0 {
-		q.Limit = 50
-	}
 	d = d.Limit(q.Limit)
 	return d
 }

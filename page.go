@@ -65,6 +65,7 @@ func (o *Pager) MakeNoPageFilter(filters FilterArgs) *query.Query {
 		Where: strings.Join(_querys, " AND "),
 		Args:  _agrs,
 		Order: _order,
+		NoPage: true,
 	}
 }
 
