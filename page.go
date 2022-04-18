@@ -31,13 +31,19 @@ type Pager struct {
 }
 
 // 根据filter生成对于的查询参数
-func (o *Pager) MakeNoPageFilter(filters FilterArgs) *query.Query {
+func (o *Pager) MakeNoPageFilter(filters FilterArgs, likeField ...string) *query.Query {
 	var _querys []string
 	var _agrs []interface{}
 	var _order []query.OrderBy
+	var _likeFields = map[string]struct{}{}
+	var _likesKey []string
+	var _likesVal []interface{}
+	for _, v := range likeField {
+		_likeFields[v] = struct{}{}
+	}
 
 	for k, v := range filters {
-		if k == "order" {
+		if k == o.orderArgName {
 			_orders := strings.Split(v, ",")
 			for _, field := range _orders {
 				if field == "" {
@@ -51,8 +57,14 @@ func (o *Pager) MakeNoPageFilter(filters FilterArgs) *query.Query {
 			}
 			continue
 		}
-		
+
 		if k == o.noPageArgName {
+			continue
+		}
+
+		if _, ok := _likeFields[k]; ok {
+			_likesKey = append(_likesKey, k+" LIKE ?")
+			_likesVal = append(_likesVal, "%"+v+"%")
 			continue
 		}
 
@@ -61,22 +73,32 @@ func (o *Pager) MakeNoPageFilter(filters FilterArgs) *query.Query {
 			_agrs = append(_agrs, v)
 		}
 	}
+
+	_querys = append(_querys, _likesKey...)
+	_agrs = append(_agrs, _likesVal...)
+
 	return &query.Query{
-		Where: strings.Join(_querys, " AND "),
-		Args:  _agrs,
-		Order: _order,
+		Where:  strings.Join(_querys, " AND "),
+		Args:   _agrs,
+		Order:  _order,
 		NoPage: true,
 	}
 }
 
 // 根据filter生成对于的查询参数
-func (o *Pager) MakePageFilter(filters FilterArgs) *query.Query {
+func (o *Pager) MakePageFilter(filters FilterArgs, likeField ...string) *query.Query {
 	currentPage := 1
 	pageSize := o.defaultPageSize
 	var _querys []string
 	var _agrs []interface{}
 	var _order []query.OrderBy
 	var _noPage bool
+	var _likeFields = map[string]struct{}{}
+	var _likesKey []string
+	var _likesVal []interface{}
+	for _, v := range likeField {
+		_likeFields[v] = struct{}{}
+	}
 
 	for k, v := range filters {
 		if k == o.currentPageArgName {
@@ -85,6 +107,7 @@ func (o *Pager) MakePageFilter(filters FilterArgs) *query.Query {
 			}
 			continue
 		}
+
 		if k == o.pageSizeArgName {
 			if _size, err := strconv.Atoi(v); err == nil {
 				pageSize = _size
@@ -115,11 +138,21 @@ func (o *Pager) MakePageFilter(filters FilterArgs) *query.Query {
 			continue
 		}
 
+		if _, ok := _likeFields[k]; ok {
+			_likesKey = append(_likesKey, k+" LIKE ?")
+			_likesVal = append(_likesVal, "%"+v+"%")
+			continue
+		}
+
 		if k != "" {
 			_querys = append(_querys, k+" = ?")
 			_agrs = append(_agrs, v)
 		}
 	}
+
+	_querys = append(_querys, _likesKey...)
+	_agrs = append(_agrs, _likesVal...)
+
 	return &query.Query{
 		Where:  strings.Join(_querys, " AND "),
 		Args:   _agrs,
