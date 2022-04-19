@@ -166,16 +166,16 @@ func (o *Pager) MakePageFilter(filters FilterArgs, likeField ...string) *query.Q
 }
 
 // 自动选择是否分页
-func (o *Pager) MakeFilter(filters FilterArgs) *query.Query {
+func (o *Pager) MakeFilter(filters FilterArgs, likeField ...string) *query.Query {
 	if _, ok := filters[o.noPageArgName]; ok {
-		return o.MakeNoPageFilter(filters)
+		return o.MakeNoPageFilter(filters, likeField...)
 	}
-	return o.MakePageFilter(filters)
+	return o.MakePageFilter(filters, likeField...)
 }
 
 // 分页列表查询器
-func (o *Pager) PageQueryResult(db *gorm.DB, filters FilterArgs, results interface{}, preload ...string) (*query.Page, error) {
-	query := o.MakePageFilter(filters)
+func (o *Pager) PageQueryResult(db *gorm.DB, filters FilterArgs, likesFields []string, results interface{}, preload ...string) (*query.Page, error) {
+	query := o.MakePageFilter(filters, likesFields...)
 	page, err := query.PageQuery(db)
 	if err != nil {
 		return nil, err
@@ -191,7 +191,7 @@ func (o *Pager) PageQueryResult(db *gorm.DB, filters FilterArgs, results interfa
 }
 
 // 不分页列表查询器
-func (o *Pager) NoPageQueryResult(db *gorm.DB, filters FilterArgs, results interface{}, preload ...string) error {
+func (o *Pager) NoPageQueryResult(db *gorm.DB, filters FilterArgs, likesFields []string, results interface{}, preload ...string) error {
 	query := o.MakeNoPageFilter(filters)
 	db = query.Query(db)
 
@@ -205,19 +205,19 @@ func (o *Pager) NoPageQueryResult(db *gorm.DB, filters FilterArgs, results inter
 }
 
 // 自动选择器，通过判断filterArgs里是否有no_page的参数
-func (o *Pager) QueryResult(db *gorm.DB, filters FilterArgs, results interface{}, preload ...string) (*query.Page, error) {
+func (o *Pager) QueryResult(db *gorm.DB, filters FilterArgs, likesFields []string, results interface{}, preload ...string) (*query.Page, error) {
 	if _, ok := filters[o.noPageArgName]; !ok {
-		return o.PageQueryResult(db, filters, results, preload...)
+		return o.PageQueryResult(db, filters, likesFields, results, preload...)
 	}
-	err := o.NoPageQueryResult(db, filters, results, preload...)
+	err := o.NoPageQueryResult(db, filters, likesFields, results, preload...)
 	return nil, err
 }
 
-func (o *Pager) QueryResultByCommon(db *gorm.DB, filters FilterArgs, results interface{}, preload ...string) (interface{}, error) {
+func (o *Pager) QueryResultByCommon(db *gorm.DB, filters FilterArgs, likesFields []string, results interface{}, preload ...string) (interface{}, error) {
 	if _, ok := filters[o.noPageArgName]; !ok {
-		return o.PageQueryResult(db, filters, results, preload...)
+		return o.PageQueryResult(db, filters, likesFields, results, preload...)
 	}
-	err := o.NoPageQueryResult(db, filters, results, preload...)
+	err := o.NoPageQueryResult(db, filters, likesFields, results, preload...)
 	return &results, err
 }
 
