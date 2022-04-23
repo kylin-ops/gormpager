@@ -1,6 +1,7 @@
 package gormpager
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -9,7 +10,7 @@ import (
 )
 
 // 过滤参数
-type FilterArgs map[string]string
+type FilterArgs map[string]interface{}
 
 // 过滤器
 type Options struct {
@@ -44,15 +45,18 @@ func (o *Pager) MakeNoPageFilter(filters FilterArgs, likeField ...string) *query
 
 	for k, v := range filters {
 		if k == o.orderArgName {
-			_orders := strings.Split(v, ",")
-			for _, field := range _orders {
-				if field == "" {
-					continue
-				}
-				if field[:1] == "-" {
-					_order = append(_order, query.OrderBy{Field: field[1:], Order: -1})
-				} else {
-					_order = append(_order, query.OrderBy{Field: field, Order: 1})
+			_v, ok := v.(string)
+			if ok {
+				_orders := strings.Split(_v, ",")
+				for _, field := range _orders {
+					if field == "" {
+						continue
+					}
+					if field[:1] == "-" {
+						_order = append(_order, query.OrderBy{Field: field[1:], Order: -1})
+					} else {
+						_order = append(_order, query.OrderBy{Field: field, Order: 1})
+					}
 				}
 			}
 			continue
@@ -64,7 +68,7 @@ func (o *Pager) MakeNoPageFilter(filters FilterArgs, likeField ...string) *query
 
 		if _, ok := _likeFields[k]; ok {
 			_likesKey = append(_likesKey, k+" LIKE ?")
-			_likesVal = append(_likesVal, "%"+v+"%")
+			_likesVal = append(_likesVal, fmt.Sprintf("%s%v%s", "%", v, "%"))
 			continue
 		}
 
@@ -102,18 +106,30 @@ func (o *Pager) MakePageFilter(filters FilterArgs, likeField ...string) *query.Q
 
 	for k, v := range filters {
 		if k == o.currentPageArgName {
-			if _page, err := strconv.Atoi(v); err == nil {
-				currentPage = _page
+			if _v, ok := v.(int); ok {
+				currentPage = _v
+			}
+			if _v, ok := v.(string); ok {
+				if _page, err := strconv.Atoi(_v); err == nil {
+					currentPage = _page
+				}
 			}
 			continue
 		}
 
 		if k == o.pageSizeArgName {
-			if _size, err := strconv.Atoi(v); err == nil {
-				pageSize = _size
-				if pageSize > o.maxPageSize {
-					pageSize = o.maxPageSize
+			if _v, ok := v.(int); ok {
+				pageSize = _v
+			}
+
+			if _v, ok := v.(string); ok {
+				if _size, err := strconv.Atoi(_v); err == nil {
+					pageSize = _size
 				}
+			}
+
+			if pageSize > o.maxPageSize {
+				pageSize = o.maxPageSize
 			}
 			continue
 		}
@@ -124,15 +140,17 @@ func (o *Pager) MakePageFilter(filters FilterArgs, likeField ...string) *query.Q
 		}
 
 		if k == o.orderArgName {
-			_orders := strings.Split(v, ",")
-			for _, field := range _orders {
-				if field == "" {
-					continue
-				}
-				if field[:1] == "-" {
-					_order = append(_order, query.OrderBy{Field: field[1:], Order: -1})
-				} else {
-					_order = append(_order, query.OrderBy{Field: field, Order: 1})
+			if _v, ok := v.(string); ok {
+				_orders := strings.Split(_v, ",")
+				for _, field := range _orders {
+					if field == "" {
+						continue
+					}
+					if field[:1] == "-" {
+						_order = append(_order, query.OrderBy{Field: field[1:], Order: -1})
+					} else {
+						_order = append(_order, query.OrderBy{Field: field, Order: 1})
+					}
 				}
 			}
 			continue
@@ -140,7 +158,7 @@ func (o *Pager) MakePageFilter(filters FilterArgs, likeField ...string) *query.Q
 
 		if _, ok := _likeFields[k]; ok {
 			_likesKey = append(_likesKey, k+" LIKE ?")
-			_likesVal = append(_likesVal, "%"+v+"%")
+			_likesVal = append(_likesVal, fmt.Sprintf("%s%v%s", "%", v, "%"))
 			continue
 		}
 
