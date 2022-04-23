@@ -1,7 +1,6 @@
 package gormpager
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -67,8 +66,10 @@ func (o *Pager) MakeNoPageFilter(filters FilterArgs, likeField ...string) *query
 		}
 
 		if _, ok := _likeFields[k]; ok {
-			_likesKey = append(_likesKey, k+" LIKE ?")
-			_likesVal = append(_likesVal, fmt.Sprintf("%s%v%s", "%", v, "%"))
+			if _v, ok := v.(string); ok {
+				_likesKey = append(_likesKey, k+" LIKE ?")
+				_likesVal = append(_likesVal, "%"+_v+"%")
+			}
 			continue
 		}
 
@@ -157,8 +158,10 @@ func (o *Pager) MakePageFilter(filters FilterArgs, likeField ...string) *query.Q
 		}
 
 		if _, ok := _likeFields[k]; ok {
-			_likesKey = append(_likesKey, k+" LIKE ?")
-			_likesVal = append(_likesVal, fmt.Sprintf("%s%v%s", "%", v, "%"))
+			if _v, ok := v.(string); ok {
+				_likesKey = append(_likesKey, k+" LIKE ?")
+				_likesVal = append(_likesVal, "%"+_v+"%")
+			}
 			continue
 		}
 
