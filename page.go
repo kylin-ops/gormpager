@@ -213,7 +213,7 @@ func (o *Pager) PageQueryResult(db *gorm.DB, filters FilterArgs, likesFields []s
 
 // 不分页列表查询器
 func (o *Pager) NoPageQueryResult(db *gorm.DB, filters FilterArgs, likesFields []string, results interface{}, preload ...string) error {
-	query := o.MakeNoPageFilter(filters)
+	query := o.MakeNoPageFilter(filters, likesFields...)
 	db = query.Query(db)
 
 	for _, p := range preload {
