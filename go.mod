@@ -1,4 +1,4 @@
-module gitlab.sheincorp.cn/ops_go_sdk/gormpager
+module github.com/kylin-ops/gormpager
 
 go 1.16
 

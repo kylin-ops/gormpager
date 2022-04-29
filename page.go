@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gitlab.sheincorp.cn/ops_go_sdk/gormpager/query"
+	"github.com/kylin-ops/gormpager/query"
 	"gorm.io/gorm"
 )
 
