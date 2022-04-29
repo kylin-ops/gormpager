@@ -8,6 +8,8 @@ import (
 	"gorm.io/gorm"
 )
 
+var Pager *pager
+
 // 过滤参数
 type FilterArgs map[string]interface{}
 
@@ -21,7 +23,7 @@ type Options struct {
 	NoPageArgName      string `json:"no_page_arg_name" yaml:"no_page_arg_name"`
 }
 
-type Pager struct {
+type pager struct {
 	maxPageSize        int
 	defaultPageSize    int
 	pageSizeArgName    string
@@ -31,7 +33,7 @@ type Pager struct {
 }
 
 // 根据filter生成对于的查询参数
-func (o *Pager) MakeNoPageFilter(filters FilterArgs, likeField ...string) *query.Query {
+func (o *pager) MakeNoPageFilter(filters FilterArgs, likeField ...string) *query.Query {
 	var _querys []string
 	var _agrs []interface{}
 	var _order []query.OrderBy
@@ -91,7 +93,7 @@ func (o *Pager) MakeNoPageFilter(filters FilterArgs, likeField ...string) *query
 }
 
 // 根据filter生成对于的查询参数
-func (o *Pager) MakePageFilter(filters FilterArgs, likeField ...string) *query.Query {
+func (o *pager) MakePageFilter(filters FilterArgs, likeField ...string) *query.Query {
 	currentPage := 1
 	pageSize := o.defaultPageSize
 	var _querys []string
@@ -187,7 +189,7 @@ func (o *Pager) MakePageFilter(filters FilterArgs, likeField ...string) *query.Q
 }
 
 // 自动选择是否分页
-func (o *Pager) MakeFilter(filters FilterArgs, likeField ...string) *query.Query {
+func (o *pager) MakeFilter(filters FilterArgs, likeField ...string) *query.Query {
 	if _, ok := filters[o.noPageArgName]; ok {
 		return o.MakeNoPageFilter(filters, likeField...)
 	}
@@ -195,7 +197,7 @@ func (o *Pager) MakeFilter(filters FilterArgs, likeField ...string) *query.Query
 }
 
 // 分页列表查询器
-func (o *Pager) PageQueryResult(db *gorm.DB, filters FilterArgs, likesFields []string, results interface{}, preload ...string) (*query.Page, error) {
+func (o *pager) PageQueryResult(db *gorm.DB, filters FilterArgs, likesFields []string, results interface{}, preload ...string) (*query.Page, error) {
 	query := o.MakePageFilter(filters, likesFields...)
 	page, err := query.PageQuery(db)
 	if err != nil {
@@ -212,7 +214,7 @@ func (o *Pager) PageQueryResult(db *gorm.DB, filters FilterArgs, likesFields []s
 }
 
 // 不分页列表查询器
-func (o *Pager) NoPageQueryResult(db *gorm.DB, filters FilterArgs, likesFields []string, results interface{}, preload ...string) error {
+func (o *pager) NoPageQueryResult(db *gorm.DB, filters FilterArgs, likesFields []string, results interface{}, preload ...string) error {
 	query := o.MakeNoPageFilter(filters, likesFields...)
 	db = query.Query(db)
 
@@ -226,7 +228,7 @@ func (o *Pager) NoPageQueryResult(db *gorm.DB, filters FilterArgs, likesFields [
 }
 
 // 自动选择器，通过判断filterArgs里是否有no_page的参数
-func (o *Pager) QueryResult(db *gorm.DB, filters FilterArgs, likesFields []string, results interface{}, preload ...string) (*query.Page, error) {
+func (o *pager) QueryResult(db *gorm.DB, filters FilterArgs, likesFields []string, results interface{}, preload ...string) (*query.Page, error) {
 	if _, ok := filters[o.noPageArgName]; !ok {
 		return o.PageQueryResult(db, filters, likesFields, results, preload...)
 	}
@@ -234,7 +236,7 @@ func (o *Pager) QueryResult(db *gorm.DB, filters FilterArgs, likesFields []strin
 	return nil, err
 }
 
-func (o *Pager) QueryResultByCommon(db *gorm.DB, filters FilterArgs, likesFields []string, results interface{}, preload ...string) (interface{}, error) {
+func (o *pager) QueryResultByCommon(db *gorm.DB, filters FilterArgs, likesFields []string, results interface{}, preload ...string) (interface{}, error) {
 	if _, ok := filters[o.noPageArgName]; !ok {
 		return o.PageQueryResult(db, filters, likesFields, results, preload...)
 	}
@@ -242,7 +244,7 @@ func (o *Pager) QueryResultByCommon(db *gorm.DB, filters FilterArgs, likesFields
 	return &results, err
 }
 
-func NewFilter(options *Options) *Pager {
+func InitPager(options *Options)*pager{
 	if options.MaxPageSize == 0 {
 		options.MaxPageSize = 50
 	}
@@ -265,7 +267,7 @@ func NewFilter(options *Options) *Pager {
 		options.NoPageArgName = "no_page"
 	}
 
-	return &Pager{
+	Pager = &pager{
 		maxPageSize:        options.MaxPageSize,
 		defaultPageSize:    options.DefaultPageSize,
 		pageSizeArgName:    options.PageSizeArgName,
@@ -273,4 +275,5 @@ func NewFilter(options *Options) *Pager {
 		orderArgName:       options.OrderArgName,
 		noPageArgName:      options.NoPageArgName,
 	}
+	return Pager
 }
